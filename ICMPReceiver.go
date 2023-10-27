@@ -33,6 +33,22 @@ func NewICMPReceiver(iface string) *ICMPReceiver {
 func (r *ICMPReceiver) Start() {
 	handle, err := pcap.OpenLive(r.Interface, 1600, true, pcap.BlockForever)
 	if err != nil {
+
+		interfaces, err := pcap.FindAllDevs()
+		if err != nil {
+			log.Fatalf("Errore durante la ricerca delle interfacce di rete: %v", err)
+		}
+
+		fmt.Println("Interfacce di rete disponibili:")
+		for _, iface := range interfaces {
+			fmt.Printf("Nome: %s\n", iface.Name)
+			fmt.Println("Indirizzi IP:")
+			for _, addr := range iface.Addresses {
+				fmt.Printf("  - IP: %s/%d\n", addr.IP, addr.Netmask)
+			}
+			fmt.Println()
+		}
+
 		log.Fatalf("Error opening interface: %v", err)
 	}
 	defer handle.Close()
