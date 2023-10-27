@@ -8,11 +8,13 @@ import (
 	"time"
 )
 
+// Collector represents a data collector that stores connection information.
 type Collector struct {
 	Programs []string
 	Data     map[byte]map[uint16]map[uint32][]uint32
 }
 
+// NewCollector creates and returns a new Collector instance.
 func NewCollector() *Collector {
 	return &Collector{
 		Programs: make([]string, 0),
@@ -20,6 +22,7 @@ func NewCollector() *Collector {
 	}
 }
 
+// AddConnectionInfo adds connection information to the collector.
 func (c *Collector) AddConnectionInfo(info ConnectionInfo) {
 	timestamp := combineDayHour(time.Now().Unix())
 	programId := addStringToList(&c.Programs, info.ProgramName)
@@ -41,6 +44,7 @@ func (c *Collector) AddConnectionInfo(info ConnectionInfo) {
 	c.Data[timestamp][programId][info.RemotePort] = ips
 }
 
+// EncodeToBinary encodes the collector data to binary format.
 func (c *Collector) EncodeToBinary() ([]byte, error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
@@ -51,17 +55,7 @@ func (c *Collector) EncodeToBinary() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func DecodeCollectorFromBinary(data []byte) (*Collector, error) {
-	var c Collector
-	buf := bytes.NewBuffer(data)
-	dec := gob.NewDecoder(buf)
-	err := dec.Decode(&c)
-	if err != nil {
-		return nil, err
-	}
-	return &c, nil
-}
-
+// Print prints the collected data in a human-readable format.
 func (c *Collector) Print() {
 	for timestamp, programs := range c.Data {
 		hour, day := splitDate(timestamp)
@@ -76,4 +70,16 @@ func (c *Collector) Print() {
 			}
 		}
 	}
+}
+
+// DecodeCollectorFromBinary decodes the collector data from binary format.
+func DecodeCollectorFromBinary(data []byte) (*Collector, error) {
+	var c Collector
+	buf := bytes.NewBuffer(data)
+	dec := gob.NewDecoder(buf)
+	err := dec.Decode(&c)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
 }

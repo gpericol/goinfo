@@ -1,82 +1,46 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"time"
 )
 
-func ip2Integer(ipAddress string) uint32 {
-	ip := net.ParseIP(ipAddress)
-	ip1 := uint32(ip[12])
-	ip2 := uint32(ip[13])
-	ip3 := uint32(ip[14])
-	ip4 := uint32(ip[15])
-	return ip1 + ip2<<8 + ip3<<16 + ip4<<24
-}
-
-func Integer2Ip(ipAddress uint32) string {
-	ip1 := byte(ipAddress & 0xFF)
-	ip2 := byte((ipAddress >> 8) & 0xFF)
-	ip3 := byte((ipAddress >> 16) & 0xFF)
-	ip4 := byte((ipAddress >> 24) & 0xFF)
-	ip := net.IPv4(ip1, ip2, ip3, ip4)
-	return ip.String()
-}
-
-func combineDayHour(timestamp int64) byte {
-	t := time.Unix(timestamp, 0)
-	dayOfWeek := int(t.Weekday())
-	hour := t.Hour()
-	combined := byte(hour<<3) | byte(dayOfWeek)
-	return combined
-}
-
-func addStringToList(list *[]string, str string) uint16 {
-	for i, s := range *list {
-		if s == str {
-			return uint16(i)
-		}
-	}
-	*list = append(*list, str)
-	return uint16(len(*list) - 1)
-}
-
-func addIpToList(list *[]uint32, ip uint32) {
-	for _, v := range *list {
-		if v == ip {
-			return
-		}
-	}
-	*list = append(*list, ip)
-}
-
-func splitDate(b byte) (int, int) {
-	hour := int(b >> 3)
-	day := int(b & 0x07)
-	return hour, day
-}
-
-func SaveToBinaryFile(data []byte, filename string) error {
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	_, err = file.Write(data)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func main() {
-	const numRuns = 100
-	const interval = time.Minute
+	fileNamePtr := flag.String("f", "", "Specify the file name for 'read' mode")
+	numRunsPtr := flag.Int("t", 0, "Specify the number of runs for 'execution' mode")
+	intervalMultiplierPtr := flag.Int("m", 0, "Specify the minutes multiplier for 'execution' mode")
+	flag.Parse()
+
+	if *fileNamePtr != "" {
+		displayFile(*fileNamePtr)
+	} else if *numRunsPtr > 0 && *intervalMultiplierPtr > 0 {
+		runProgram(*numRunsPtr, *intervalMultiplierPtr)
+	} else {
+		fmt.Printf("Usage of %s:\n", os.Args[0])
+		fmt.Println()
+		fmt.Println("Mode 1: Read Mode (-f)")
+		fmt.Println("  Use '-f' followed by a file name to display data from a binary file.")
+		fmt.Printf("  Example: ./%s -f data.bin\n", os.Args[0])
+		fmt.Println()
+		fmt.Println("Mode 2: Execution Mode (-t and -m)")
+		fmt.Println("  Use '-t' followed by the number of runs and '-m' followed by the minutes multiplier to collect data over multiple runs.")
+		fmt.Printf("  Example: ./%s -t 5 -m 10\n", os.Args[0])
+		fmt.Println()
+		flag.PrintDefaults()
+
+	}
+}
+
+// runProgram runs the data collection program for the specified number of runs with a given interval.
+func runProgram(numRuns int, intervalMultiplier int) {
+	interval := time.Duration(intervalMultiplier) * time.Minute
+
 	connections := NewConnections()
 	collector := NewCollector()
+
 	for i := 0; i < numRuns; i++ {
 		connections.GetConnections()
 		for _, info := range connections.GetConnections() {
@@ -85,11 +49,24 @@ func main() {
 		collector.Print()
 		binaryData, err := collector.EncodeToBinary()
 		if err != nil {
-			log.Fatalf("Errore durante la codifica gob: %v", err)
+			log.Fatalf("error on saving: %v", err)
 		}
 		SaveToBinaryFile(binaryData, "data.bin")
-		fmt.Printf("Dati codificati in formato binario:\n")
-		fmt.Printf("%x\n", binaryData)
-		time.Sleep(interval)
+		if i < numRuns-1 {
+			time.Sleep(interval)
+		}
 	}
+}
+
+// displayFile reads and displays data from a binary file.
+func displayFile(fileName string) {
+	data, err := ReadFromBinaryFile(fileName)
+	if err != nil {
+		log.Fatalf("Error during file reading: %v", err)
+	}
+	collector, err := DecodeCollectorFromBinary(data)
+	if err != nil {
+		log.Fatalf("Error during gob decoding: %v", err)
+	}
+	collector.Print()
 }

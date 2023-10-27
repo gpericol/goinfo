@@ -9,20 +9,24 @@ import (
 	"github.com/shirou/gopsutil/process"
 )
 
+// ConnectionInfo represents information about a network connection.
 type ConnectionInfo struct {
 	ProgramName string
 	RemoteAddr  string
 	RemotePort  uint32
 }
 
+// Connections represents a list of network connections.
 type Connections struct {
 	list []ConnectionInfo
 }
 
+// NewConnections creates and returns a new Connections instance.
 func NewConnections() *Connections {
 	return &Connections{}
 }
 
+// RefreshConnections refreshes the list of network connections.
 func (c *Connections) RefreshConnections() {
 	c.list = nil
 
@@ -62,6 +66,7 @@ func (c *Connections) RefreshConnections() {
 	}
 }
 
+// GetConnections returns the list of network connections.
 func (c *Connections) GetConnections() []ConnectionInfo {
 	if c.list == nil {
 		c.RefreshConnections()
